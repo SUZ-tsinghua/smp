@@ -1,0 +1,13 @@
+.venv/
+.ruff_cache/
+.vscode/
+.claude/
+__pycache__/
+*.py[oc]
+*.egg-info/
+build/
+dist/
+wheels/
+uv.lock
+logs/
+.git/
