@@ -1,15 +1,38 @@
-"""Transformer denoiser and DDPM scheduler for SMP."""
+"""Transformer denoiser + sinusoidal time embedding for SMP."""
 
 from __future__ import annotations
+
+import math
 
 import torch
 import torch.nn as nn
 
-from smp.models.time_embed import SinusoidalTimeEmbedding
+
+class SinusoidalTimeEmbedding(nn.Module):
+  """Standard sinusoidal positional embedding for diffusion timesteps."""
+
+  freqs: torch.Tensor
+
+  def __init__(self, dim: int) -> None:
+    super().__init__()
+    if dim % 2 != 0:
+      msg = f"SinusoidalTimeEmbedding requires even dim, got {dim}"
+      raise ValueError(msg)
+    self.dim = dim
+    half = dim // 2
+    freqs = torch.exp(
+      -math.log(10000.0) * torch.arange(half, dtype=torch.float32) / half
+    )
+    self.register_buffer("freqs", freqs, persistent=False)
+
+  def forward(self, t: torch.Tensor) -> torch.Tensor:
+    """Embed integer timesteps. Shape: (B,) -> (B, dim)."""
+    args = t.float()[:, None] * self.freqs[None, :]
+    return torch.cat([torch.sin(args), torch.cos(args)], dim=-1)
 
 
 class DiffusionDenoiser(nn.Module):
-  """2-layer transformer encoder, epsilon-prediction parameterization.
+  """Transformer encoder denoiser, epsilon-prediction parameterization.
 
   Input:  (B, window_size, feature_dim) noised motion window + (B,) timesteps
   Output: (B, window_size, feature_dim) predicted noise
@@ -66,45 +89,3 @@ class DiffusionDenoiser(nn.Module):
       h = layer(h + t_emb)
     h = self.output_norm(h)
     return self.output_proj(h)
-
-
-class DDPMScheduler(nn.Module):
-  """Minimal DDPM noise scheduler. Linear beta schedule, epsilon parameterization.
-
-  Subclassing nn.Module so buffers move with .to(device) automatically.
-  Only the two sqrt(alpha_bar) buffers are kept; the raw betas/alphas are not
-  used by add_noise and would only be needed for a sampler (not implemented).
-  """
-
-  sqrt_alphas_cumprod: torch.Tensor
-  sqrt_one_minus_alphas_cumprod: torch.Tensor
-
-  def __init__(
-    self,
-    num_timesteps: int = 50,
-    beta_start: float = 1e-4,
-    beta_end: float = 0.02,
-  ) -> None:
-    super().__init__()
-    self.num_timesteps = num_timesteps
-    betas = torch.linspace(beta_start, beta_end, num_timesteps, dtype=torch.float32)
-    alphas_cumprod = torch.cumprod(1.0 - betas, dim=0)
-    self.register_buffer("sqrt_alphas_cumprod", torch.sqrt(alphas_cumprod))
-    self.register_buffer(
-      "sqrt_one_minus_alphas_cumprod", torch.sqrt(1.0 - alphas_cumprod)
-    )
-
-  def add_noise(
-    self, x_0: torch.Tensor, noise: torch.Tensor, t: torch.Tensor
-  ) -> torch.Tensor:
-    """Forward diffusion: x_t = sqrt(alpha_bar_t) * x_0 + sqrt(1 - alpha_bar_t) * noise."""
-    shape = (-1, *([1] * (x_0.ndim - 1)))
-    return (
-      self.sqrt_alphas_cumprod[t].view(shape) * x_0
-      + self.sqrt_one_minus_alphas_cumprod[t].view(shape) * noise
-    )
-
-  def sample_timesteps(self, batch_size: int, device: torch.device) -> torch.Tensor:
-    return torch.randint(
-      0, self.num_timesteps, (batch_size,), device=device, dtype=torch.long
-    )

@@ -12,9 +12,8 @@ from torch.utils.data import Dataset
 class MotionWindowDataset(Dataset[torch.Tensor]):
   """Loads pre-windowed NPZs produced by scripts/csv_to_npz.py.
 
-  Each NPZ contains a `windows` array of shape (N, window_size, feature_dim).
   Per-frame layout: motion_anchor_pos_b (3) + motion_anchor_ori_b (6) +
-  robot_body_pos_b (B*3) + robot_body_ori_b (B*6) + joint_pos (J).
+  joint_pos (J).
   """
 
   def __init__(
