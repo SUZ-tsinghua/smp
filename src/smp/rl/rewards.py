@@ -28,7 +28,8 @@ def smp_guidance_reward(
   """
   device = torch.device(env.device)
   model, scheduler, q_low, q_high, _, _ = env._smp_bundle  # type: ignore[attr-defined]
-  model.eval()  # RL runner may set train mode — force eval to disable dropout
+  # Guard against the RL runner flipping modules into train mode (dropout=0.1).
+  model.eval()
   buffer = env._smp_buffer  # type: ignore[attr-defined]
   normalizer: DiffNormalizer = env._smp_normalizer  # type: ignore[attr-defined]
 
@@ -42,8 +43,7 @@ def smp_guidance_reward(
     robot.data.joint_vel,
   )
 
-  features = buffer.compute_features()  # (N, W, F)
-
+  features = buffer.compute_features()
   x_0 = 2.0 * (features - q_low) / (q_high - q_low + 1e-8) - 1.0
   num_envs = x_0.shape[0]
 
@@ -57,7 +57,7 @@ def smp_guidance_reward(
       noise = torch.randn_like(x_0)
       x_t = scheduler.add_noise(x_0, noise, t)
       eps_hat = model(x_t, t)
-      mse_per_env = ((eps_hat - noise) ** 2).mean(dim=(-1, -2))  # (N,)
+      mse_per_env = ((eps_hat - noise) ** 2).mean(dim=(-1, -2))
       total_err += normalizer.update_and_normalize(t_scalar, mse_per_env)
 
   err = total_err / len(fixed_timesteps)

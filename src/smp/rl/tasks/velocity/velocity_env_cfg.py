@@ -81,7 +81,10 @@ def g1_velocity_smp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     params={"command_name": "twist", "std": math.sqrt(0.5)},
   )
 
-  #   # --- Events --------------------------------------------------------------
+  # --- Events --------------------------------------------------------------
+  cfg.events["init_smp_state"].params["ckpt_path"] = (
+    "datasets/pretrain_ckpt/pretrained_loco.pt"
+  )
   #   cfg.events["reset_base"] = EventTermCfg(
   #       func=mdp.reset_root_state_uniform,
   #       mode="reset",
