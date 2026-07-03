@@ -45,7 +45,7 @@ uv sync
 ## Pipeline
 
 1. **Data processing** (CSV → windowed NPZ → normalization stats) — documented below.
-2. **Diffusion pretraining** (DDPM ε-predictor on motion windows) — _TODO (docs pending)._
+2. **Diffusion pretraining** (DDPM ε-predictor on motion windows) — documented below.
    You can skip this entirely using the [shipped checkpoints](#provided-pretrained-priors).
 3. **RL** (PPO with the frozen prior as a guidance reward) — documented below.
 
@@ -132,6 +132,27 @@ why a wide normalizer matters.
 > **out-of-distribution** inputs, and its score estimate — hence the SMP guidance
 > reward — degrades exactly where the policy needs it. A wide normalizer keeps the
 > score reliable across the states RL actually visits.
+
+---
+
+## Diffusion pretraining
+
+### Convert the CSV dataset to NPZ
+
+First convert the corresponding CSV dataset into windowed NPZ files. For the
+forward prior:
+
+```bash
+uv run scripts/csv_to_npz.py \
+  --input-dir datasets/csv/forward \
+  --output-dir datasets/npz/forward
+```
+
+### Train the forward prior
+
+```bash
+uv run scripts/pretrain.py --data-dir datasets/npz/forward/ --num-layers 2 --no-use-ema --save-interval 5000 --num-epochs 10000 --train-split 1.0 --d-model 128
+```
 
 ---
 
