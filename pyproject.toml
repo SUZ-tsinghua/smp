@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dependencies = [
   "mjlab",
+  "mujoco==3.9.0",
   "torch<2.11.0",
   "numpy>=1.26",
   "matplotlib>=3.9",
@@ -22,6 +23,9 @@ dependencies = [
 dev = [
   "ruff>=0.14.14",
 ]
+
+[tool.uv]
+no-sources-package = ["mujoco"]
 
 [tool.uv.sources]
 mjlab = { git = "https://github.com/mujocolab/mjlab.git", rev = "731fa27" }
