@@ -76,7 +76,7 @@ class LocationCommand(CommandTerm):
     self.tar_pos_w[env_ids, 0] = root_pos_xy[:, 0] + rand_dist * torch.cos(rand_theta)
     self.tar_pos_w[env_ids, 1] = root_pos_xy[:, 1] + rand_dist * torch.sin(rand_theta)
 
-  def _update_command(self) -> None:
+  def _update_command(self, env_ids: torch.Tensor | None = None) -> None:
     root_pos_xy = self.robot.data.root_link_pos_w[:, :2]
     heading_w = self.robot.data.heading_w
     self.command_b[:] = _xy_world_to_local(self.tar_pos_w - root_pos_xy, heading_w)
@@ -125,8 +125,10 @@ class LocationCommand(CommandTerm):
     self._gui_angle = angle_slider
     self._gui_get_env_idx = get_env_idx
 
-  def compute(self, dt: float) -> None:
-    super().compute(dt)
+  def compute(
+    self, dt: float | torch.Tensor, env_ids: torch.Tensor | None = None
+  ) -> None:
+    super().compute(dt, env_ids)
     if self._gui_enabled is None or not self._gui_enabled.value:
       return
     assert self._gui_get_env_idx is not None

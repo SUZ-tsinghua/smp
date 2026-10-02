@@ -36,7 +36,7 @@ points its `init_smp_state` event at the right one, so no setup is needed:
 ## Setup
 
 [`uv`](https://docs.astral.sh/uv/) is the canonical package manager; dependencies
-(including the pinned `mjlab` git rev) are locked in `uv.lock`.
+(including `mjlab`, pinned to 1.6.0) are locked in `uv.lock`.
 
 ```bash
 uv sync

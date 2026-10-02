@@ -98,7 +98,7 @@ class SteeringCommand(CommandTerm):
     self.face_dir_w[env_ids, 0] = torch.cos(face_theta)
     self.face_dir_w[env_ids, 1] = torch.sin(face_theta)
 
-  def _update_command(self) -> None:
+  def _update_command(self, env_ids: torch.Tensor | None = None) -> None:
     heading_w = self.robot.data.heading_w
     self.command_b[:, 0:2] = _dir_world_to_local(self.tar_dir_w, heading_w)
     self.command_b[:, 2] = self.tar_speed
@@ -152,8 +152,10 @@ class SteeringCommand(CommandTerm):
     self._gui_face_angle = face_angle_slider
     self._gui_get_env_idx = get_env_idx
 
-  def compute(self, dt: float) -> None:
-    super().compute(dt)
+  def compute(
+    self, dt: float | torch.Tensor, env_ids: torch.Tensor | None = None
+  ) -> None:
+    super().compute(dt, env_ids)
     if self._gui_enabled is None or not self._gui_enabled.value:
       return
     assert self._gui_get_env_idx is not None

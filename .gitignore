@@ -15,3 +15,4 @@ wandb/
 *.ckpt
 outputs/
 datasets/
+CLAUDE.md
